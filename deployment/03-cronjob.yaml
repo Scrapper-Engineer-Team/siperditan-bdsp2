@@ -1,0 +1,48 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: sc-geostrategic-siperditan-curah-hujan
+  namespace: sc-geostrategic
+  labels:
+    app: sc-geostrategic
+    kind: sc-geostrategic-siperditan-curah-hujan
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Allow
+  suspend: false
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: sc-geostrategic
+            kind: sc-geostrategic-siperditan-curah-hujan
+        spec:
+          hostAliases:
+            - ip: 10.12.1.101
+              hostnames:
+                - kafka01.research.ai
+            - ip: 10.12.1.102
+              hostnames:
+                - kafka02.research.ai
+            - ip: 10.12.1.103
+              hostnames:
+                - kafka03.research.ai
+          volumes:
+            - name: config
+              configMap:
+                  name: config-siperditan-curah-hujan
+          containers:
+          - name: sc-geostrategic-siperditan-curah-hujan
+            image: 192.168.202.50/crawler/geostrategic/siperditan-curah-hujan:1.0
+            imagePullPolicy: IfNotPresent
+            resources:
+              limits:
+                cpu: "4"
+                memory: "3Gi"
+              requests:
+                cpu: "128m"
+                memory: "256Mi"
+            command: ["python", "source/main.py", "crawler", "-m", "siperditan", "-t", "curah_hujan", "--headless"]
+          restartPolicy: Never
